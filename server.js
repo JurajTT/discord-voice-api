@@ -6,12 +6,10 @@ import { Client, GatewayIntentBits } from "discord.js";
 const app = express();
 app.use(cors());
 
-// Admin role IDs – doplň svoje ID
 const ADMIN_ROLES = [
   "1145441979870740590" // Admin
 ];
 
-// Discord klient
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -21,22 +19,28 @@ const client = new Client({
   ]
 });
 
-// Cache členov
 let voiceMembers = [];
 
-// Pomocná funkcia – vracia aj roles
-function formatMember(member) {
+function formatMember(member, voiceState) {
   return {
     id: member.user.id,
     name: member.displayName,
     avatar: member.user.displayAvatarURL({ size: 64 }),
     status: member.presence?.status || "offline",
     channelName: member.voice.channel?.name || null,
-    roles: member.roles.cache.map(r => r.id)
+    roles: member.roles.cache.map(r => r.id),
+
+    // STREAM
+    isStreaming: member.presence?.activities?.some(a => a.type === 1) || false,
+
+    // MUTE / DEAF
+    selfMute: voiceState.selfMute,
+    selfDeaf: voiceState.selfDeaf,
+    serverMute: voiceState.serverMute,
+    serverDeaf: voiceState.serverDeaf
   };
 }
 
-// Aktualizácia zoznamu každé 2 sekundy
 async function refreshVoiceMembers() {
   const guild = client.guilds.cache.get(process.env.GUILD_ID);
   if (!guild) return;
@@ -44,7 +48,7 @@ async function refreshVoiceMembers() {
   const newList = [];
 
   const allVoiceChannels = guild.channels.cache
-    .filter(ch => ch.type === 2) // GUILD_VOICE
+    .filter(ch => ch.type === 2)
     .map(ch => ch.name);
 
   for (const [_, vs] of guild.voiceStates.cache) {
@@ -55,17 +59,15 @@ async function refreshVoiceMembers() {
     if (status === "offline") continue;
     if (status === "invisible") continue;
 
-    // Načítame člena kompletne, aby mal roles
     const fullMember = await guild.members.fetch(member.id).catch(() => null);
     if (!fullMember) continue;
 
-    newList.push(formatMember(fullMember));
+    newList.push(formatMember(fullMember, vs));
   }
 
-  // Zoradenie – admini hore
   voiceMembers = newList.sort((a, b) => {
-    const aIsAdmin = a.roles && a.roles.some(r => ADMIN_ROLES.includes(r));
-    const bIsAdmin = b.roles && b.roles.some(r => ADMIN_ROLES.includes(r));
+    const aIsAdmin = a.roles.some(r => ADMIN_ROLES.includes(r));
+    const bIsAdmin = b.roles.some(r => ADMIN_ROLES.includes(r));
 
     if (aIsAdmin && !bIsAdmin) return -1;
     if (!aIsAdmin && bIsAdmin) return 1;
@@ -73,7 +75,6 @@ async function refreshVoiceMembers() {
     return (a.name || "").localeCompare(b.name || "");
   });
 
-  // Prázdne kanály
   allVoiceChannels.forEach(channelName => {
     const exists = newList.some(m => m.channelName === channelName);
     if (!exists) {
@@ -88,21 +89,17 @@ async function refreshVoiceMembers() {
   });
 }
 
-// Keď sa bot prihlási
-client.on("ready", async () => {
+client.on("ready", () => {
   console.log(`Bot prihlásený ako ${client.user.tag}`);
   setInterval(refreshVoiceMembers, 2000);
 });
 
-// API endpoint
 app.get("/members", (req, res) => {
   res.json(voiceMembers);
 });
 
-// Spustenie API
 app.listen(process.env.PORT || 3000, () => {
   console.log("API beží na porte 3000");
 });
 
-// Prihlásenie bota
 client.login(process.env.BOT_TOKEN);
