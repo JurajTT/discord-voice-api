@@ -6,10 +6,12 @@ import { Client, GatewayIntentBits } from "discord.js";
 const app = express();
 app.use(cors());
 
+// Admin role IDs
 const ADMIN_ROLES = [
   "1145441979870740590" // Admin
 ];
 
+// Discord klient
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -21,6 +23,7 @@ const client = new Client({
 
 let voiceMembers = [];
 
+// Formátovanie člena
 function formatMember(member, voiceState) {
   return {
     id: member.user.id,
@@ -30,8 +33,11 @@ function formatMember(member, voiceState) {
     channelName: member.voice.channel?.name || null,
     roles: member.roles.cache.map(r => r.id),
 
-    // STREAM
-    isStreaming: member.presence?.activities?.some(a => a.type === 1) || false,
+    // STREAM (Go Live)
+    isStreaming: voiceState.streaming || false,
+
+    // KAMERA
+    isVideo: voiceState.selfVideo || false,
 
     // MUTE / DEAF
     selfMute: voiceState.selfMute,
@@ -41,6 +47,7 @@ function formatMember(member, voiceState) {
   };
 }
 
+// Refresh každé 2 sekundy
 async function refreshVoiceMembers() {
   const guild = client.guilds.cache.get(process.env.GUILD_ID);
   if (!guild) return;
@@ -65,6 +72,7 @@ async function refreshVoiceMembers() {
     newList.push(formatMember(fullMember, vs));
   }
 
+  // Admini hore
   voiceMembers = newList.sort((a, b) => {
     const aIsAdmin = a.roles.some(r => ADMIN_ROLES.includes(r));
     const bIsAdmin = b.roles.some(r => ADMIN_ROLES.includes(r));
@@ -75,6 +83,7 @@ async function refreshVoiceMembers() {
     return (a.name || "").localeCompare(b.name || "");
   });
 
+  // Prázdne kanály
   allVoiceChannels.forEach(channelName => {
     const exists = newList.some(m => m.channelName === channelName);
     if (!exists) {
