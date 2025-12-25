@@ -6,6 +6,11 @@ import { Client, GatewayIntentBits } from "discord.js";
 const app = express();
 app.use(cors());
 
+// Admin role IDs (dop√≠≈° svoje ID)
+const ADMIN_ROLES = [
+  "1145441979870740590"  //Admin
+];
+
 // Discord klient
 const client = new Client({
   intents: [
@@ -16,38 +21,39 @@ const client = new Client({
   ]
 });
 
-// Cache Ëlenov
+// Cache ƒçlenov
 let voiceMembers = [];
 
-// Pomocn· funkcia
+// Pomocn√° funkcia ‚Äì pridali sme roles
 function formatMember(member) {
   return {
     id: member.user.id,
-    name: member.displayName, // menovka namiesto username
+    name: member.displayName,
     avatar: member.user.displayAvatarURL({ size: 64 }),
     status: member.presence?.status || "offline",
-    channelName: member.voice.channel?.name || null
+    channelName: member.voice.channel?.name || null,
+    roles: member.roles.cache.map(r => r.id) // ‚Üê pridali sme role
   };
 }
 
-// Funkcia na aktualiz·ciu zoznamu kaûdÈ 2 sekundy
+// Funkcia na aktualiz√°ciu zoznamu ka≈æd√© 2 sekundy
 async function refreshVoiceMembers() {
   const guild = client.guilds.cache.get(process.env.GUILD_ID);
   if (!guild) return;
 
   const newList = [];
 
-  // Zoznam vöetk˝ch hlasov˝ch kan·lov
+  // Zoznam v≈°etk√Ωch hlasov√Ωch kan√°lov
   const allVoiceChannels = guild.channels.cache
     .filter(ch => ch.type === 2) // 2 = GUILD_VOICE
     .map(ch => ch.name);
 
-  // Prejsù vöetk˝ch Ëlenov v hlasov˝ch kan·loch
+  // Prejs≈• v≈°etk√Ωch ƒçlenov v hlasov√Ωch kan√°loch
   guild.voiceStates.cache.forEach(vs => {
     const member = vs.member;
     const status = member.presence?.status || "offline";
 
-    // Invisible/offline õ skryù
+    // Invisible/offline ‚Üí skry≈•
     if (!vs.channelId) return;
     if (status === "offline") return;
     if (status === "invisible") return;
@@ -55,28 +61,23 @@ async function refreshVoiceMembers() {
     newList.push(formatMember(member));
   });
 
-  // Pridaù pr·zdne kan·ly
-  allVoiceChannels.forEach(channelName => {
-    const exists = newList.some(m => m.channelName === channelName);
-    if (!exists) {
-      newList.push({
-        id: null,
-        name: null,
-        avatar: null,
-        status: null,
-        channelName
-      });
-    }
-  });
+  // Zoradenie ‚Äì admini hore
+  voiceMembers = newList.sort((a, b) => {
+    const aIsAdmin = a.roles && a.roles.some(r => ADMIN_ROLES.includes(r));
+    const bIsAdmin = b.roles && b.roles.some(r => ADMIN_ROLES.includes(r));
 
-  voiceMembers = newList;
+    if (aIsAdmin && !bIsAdmin) return -1;
+    if (!aIsAdmin && bIsAdmin) return 1;
+
+    return (a.name || "").localeCompare(b.name || "");
+  });
 }
 
-// KeÔ sa bot prihl·si
+// Keƒè sa bot prihl√°si
 client.on("ready", async () => {
-  console.log(`Bot prihl·sen˝ ako ${client.user.tag}`);
+  console.log(`Bot prihl√°sen√Ω ako ${client.user.tag}`);
 
-  // Spusti automatick˙ kontrolu kaûdÈ 2 sekundy
+  // Spusti automatick√∫ kontrolu ka≈æd√© 2 sekundy
   setInterval(refreshVoiceMembers, 2000);
 });
 
@@ -87,8 +88,8 @@ app.get("/members", (req, res) => {
 
 // Spustenie API
 app.listen(3000, () => {
-  console.log("API beûÌ na porte 3000");
+  console.log("API be≈æ√≠ na porte 3000");
 });
 
-// Prihl·senie bota
+// Prihl√°senie bota
 client.login(process.env.BOT_TOKEN);
