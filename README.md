@@ -1,1 +1,1 @@
-Zobrazenie užívatelov na ESK server Discordu
+Zobrazenie užívatelov na ESK serveri Discordu.
