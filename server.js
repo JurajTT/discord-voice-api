@@ -103,14 +103,15 @@ client.on("ready", () => {
   setInterval(refreshVoiceMembers, 2000);
 });
 
+// API endpoint
 app.get("/members", (req, res) => {
   res.json(voiceMembers);
 });
 
+// Spustenie API
 app.listen(process.env.PORT || 3000, () => {
   console.log("API beží na porte 3000");
 });
 
-//client.login(process.env.BOT_TOKEN);
+// PRIHLÁSENIE BOTA — TOTO JE DÔLEŽITÉ
 client.login(process.env.DISCORD_TOKEN);
-
