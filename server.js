@@ -111,4 +111,6 @@ app.listen(process.env.PORT || 3000, () => {
   console.log("API beží na porte 3000");
 });
 
-client.login(process.env.BOT_TOKEN);
+//client.login(process.env.BOT_TOKEN);
+client.login(process.env.DISCORD_TOKEN);
+
