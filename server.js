@@ -1,3 +1,12 @@
+// Minimalny HTTP server pre Render (udrzi sluzbu aktivnu)
+import http from "http";
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("OK");
+}).listen(process.env.PORT || 3000);
+
+// --- POVODNY KOD ---
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -98,7 +107,7 @@ async function refreshVoiceMembers() {
   });
 }
 
-client.on("ready", () => {
+client.on("clientReady", () => {
   console.log(`Bot prihlásený ako ${client.user.tag}`);
   setInterval(refreshVoiceMembers, 2000);
 });
@@ -113,5 +122,5 @@ app.listen(process.env.PORT || 3000, () => {
   console.log("API beží na porte 3000");
 });
 
-// PRIHLÁSENIE BOTA — TOTO JE DÔLEŽITÉ
+// PRIHLÁSENIE BOTA
 client.login(process.env.DISCORD_TOKEN);
