@@ -113,5 +113,5 @@ app.listen(process.env.PORT || 3000, () => {
   console.log("API beží na porte 3000");
 });
 
-// PRIHLÁSENIE BOTA
+// PRIHLÁSENIE BOTA — TOTO JE DÔLEŽITÉ
 client.login(process.env.DISCORD_TOKEN);
