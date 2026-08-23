@@ -1,12 +1,3 @@
-// Minimalny HTTP server pre Render (udrzi sluzbu aktivnu)
-import http from "http";
-http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end("OK");
-}).listen(process.env.PORT || 3000);
-
-// --- POVODNY KOD ---
-
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
