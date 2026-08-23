@@ -98,7 +98,7 @@ async function refreshVoiceMembers() {
   });
 }
 
-client.on("clientReady", () => {
+client.on("ready", () => {
   console.log(`Bot prihlásený ako ${client.user.tag}`);
   setInterval(refreshVoiceMembers, 2000);
 });
